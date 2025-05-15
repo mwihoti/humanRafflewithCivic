@@ -217,14 +217,14 @@ export default function Home() {
                 Verify & Join
               </Button>
             ) : (
-              <Link href="/my-raffles">
+              <Link href="/winners-board">
                 <Button
                   size="lg"
                   variant="outline"
                   className="text-lg px-8 py-6 bg-purple-600/30 backdrop-blur-sm border-white/30 text-white hover:bg-purple-600/50 shadow-lg"
                 >
                   <Ticket className="h-5 w-5 mr-2" />
-                  My Tickets
+                  Winners-Board
                 </Button>
               </Link>
             )}

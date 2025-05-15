@@ -9,3 +9,13 @@ export interface Raffle {
   status: "active" | "completed"
   winner?: string
 }
+
+
+export interface Winner {
+  address: string
+  ensName?: string
+  avatarUrl?: string
+  rank: number
+  prize: string
+  date?: string
+}

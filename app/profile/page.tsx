@@ -7,8 +7,10 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Shield, Ticket, Clock, User } from "lucide-react"
+import { Shield, Ticket, Clock, User, Wallet, Check } from "lucide-react"
 import { useUser } from "@civic/auth-web3/react"
+import { userHasWallet } from "@civic/auth-web3"
+import { toast } from "@/components/ui/use-toast"
 import FloatingElements from "@/components/floating-elements"
 import NFTTicket from "@/components/nft-ticket"
 import { getRaffles } from "@/lib/raffle-service"
@@ -16,27 +18,66 @@ import type { Raffle } from "@/lib/types"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { isLoading, user, signOut } = useUser()
+  const userContext = useUser()
+  const { isLoading, user, signOut } = userContext
   const [activeRaffles, setActiveRaffles] = useState<Raffle[]>([])
   const [enteredRaffles, setEnteredRaffles] = useState<Raffle[]>([])
   const [isLoadingRaffles, setIsLoadingRaffles] = useState(true)
+  const [balance, setBalance] = useState<{
+    data?: {
+      value: string
+      symbol: string
+      formatted: string
+    }
+  } | null>(null)
 
   // Define the handleLogout function
   const handleLogout = useCallback(async () => {
     try {
-      await signOut();
+      await signOut()
       // Redirect to homepage after logout
-      router.push("/");
+      router.push("/")
     } catch (error) {
-      console.error("Error signing out:", error);
+      console.error("Error signing out:", error)
     }
-  }, [signOut, router]);
+  }, [signOut, router])
 
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/auth")
     }
   }, [user, isLoading, router])
+
+  // Add effect to fetch wallet balance when user connects
+  useEffect(() => {
+    const fetchBalance = async () => {
+      if (userHasWallet(userContext)) {
+        try {
+          // You'll need to implement this function based on your web3 provider
+          // This is a placeholder - you should use the appropriate method for your setup
+          const ethBalance = await window.ethereum.request({
+            method: "eth_getBalance",
+            params: [userContext.ethereum.address, "latest"],
+          })
+
+          // Convert from wei to ETH
+          const balanceInEth = Number.parseInt(ethBalance, 16) / 1e18
+
+          setBalance({
+            data: {
+              value: ethBalance,
+              symbol: "ETH",
+              formatted: balanceInEth.toFixed(4),
+            },
+          })
+        } catch (error) {
+          console.error("Error fetching balance:", error)
+        }
+      }
+    }
+
+    fetchBalance()
+  }, [userContext])
 
   useEffect(() => {
     const fetchRaffles = async () => {
@@ -58,6 +99,82 @@ export default function ProfilePage() {
     fetchRaffles()
   }, [user])
 
+  // Create a component to display wallet info
+  const WalletDetails = () => {
+    if (!userHasWallet(userContext)) {
+      return (
+        <div className="bg-purple-50 p-4 rounded-md">
+          <p className="text-sm text-gray-500 mb-1">Wallet Status</p>
+          <div className="flex items-center gap-2">
+            <Wallet className="h-4 w-4 text-purple-500" />
+            <p className="text-sm font-medium text-purple-700">No Wallet Connected</p>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="bg-purple-50 p-4 rounded-md">
+        <div className="space-y-3">
+          <div className="flex items-center">
+            <Wallet className="h-4 w-4 text-purple-500 mr-2" />
+            <div className="h-5 w-5 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
+              <Check className="h-3 w-3 text-green-500" />
+            </div>
+            <span className="text-sm font-medium text-purple-700">Wallet Connected</span>
+          </div>
+
+          <div className="space-y-1">
+            <p className="text-xs text-gray-500">Wallet Address</p>
+            <div className="flex items-center gap-2">
+              <code className="bg-white px-2 py-1 rounded text-xs font-mono text-purple-700 break-all">
+                {userContext.ethereum.address}
+              </code>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => {
+                  navigator.clipboard.writeText(userContext.ethereum.address)
+                  toast({
+                    title: "Success",
+                    description: "Address copied to clipboard",
+                  })
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+              </Button>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-xs text-gray-500">Balance</p>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-purple-700">
+                {balance?.data ? `${balance.data.formatted} ${balance.data.symbol}` : "Loading..."}
+              </span>
+              {balance?.data && BigInt(balance.data.value) === BigInt(0) && (
+                <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">Low balance</span>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -98,13 +215,15 @@ export default function ProfilePage() {
                   Browse Raffles
                 </Button>
               </Link>
+              <Link href="/">
               <Button
                 variant="outline"
                 className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-                onClick={handleLogout}
+             
               >
-                Sign Out
+                 Home
               </Button>
+              </Link>
             </div>
           </div>
 
@@ -116,24 +235,26 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex-1 text-center md:text-left">
-                  <h2 className="text-2xl font-bold text-purple-600 mb-2">Verified Human</h2>
+                  <h2 className="text-2xl font-bold text-purple-600 mb-4">Verified Human</h2>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div>
-                      <p className="text-sm text-gray-500 mb-1">Wallet Address</p>
-                      <p className="text-xs font-mono bg-purple-50 p-2 rounded-md overflow-hidden text-ellipsis break-all text-purple-700">
-                        {user.ethereum?.address || "No wallet connected"}
-                      </p>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Verification Status</p>
+                        <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-md">
+                          <Shield className="h-4 w-4 text-purple-500" />
+                          <p className="text-sm font-medium text-purple-700">
+                            {user.isVerified ? "Verified ✓" : "Pending Verification"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Add any additional user info here */}
                     </div>
 
                     <div>
-                      <p className="text-sm text-gray-500 mb-1">Verification Status</p>
-                      <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-md">
-                        <Shield className="h-4 w-4 text-purple-500" />
-                        <p className="text-sm font-medium text-purple-700">
-                          {user.isVerified ? "Verified ✓" : "Pending Verification"}
-                        </p>
-                      </div>
+                      {/* Wallet details section */}
+                      <WalletDetails />
                     </div>
                   </div>
                 </div>
@@ -231,7 +352,7 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="relative">
-                              <NFTTicket raffle={raffle} walletAddress={user.ethereum?.address} />
+                              <NFTTicket raffle={raffle} walletAddress={userContext.ethereum?.address} />
                             </div>
 
                             <Link href={`/raffles/${raffle.id}`}>

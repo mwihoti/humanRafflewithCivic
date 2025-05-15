@@ -260,7 +260,7 @@ export default function RafflesPage() {
                   </div>
                 )}
               </TabsContent>
-              <Button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+              <Button className="w-full bg-gradient-to-r p-4 bottom-0 from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
               
               onClick={() => router.push('/')}>
                                   Back

@@ -1,0 +1,87 @@
+.winner-card-shine {
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .winner-card-shine::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+      to bottom right,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(30deg);
+    animation: shimmer 4s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%) rotate(30deg);
+    }
+    100% {
+      transform: translateX(100%) rotate(30deg);
+    }
+  }
+  
+  .trophy-icon-1 {
+    animation: bounce 2s ease-in-out infinite;
+  }
+  
+  @keyframes bounce {
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+  
+  .podium {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto auto;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  
+  .podium-1 {
+    grid-column: 2;
+    grid-row: 1;
+    transform: translateY(-20px);
+    z-index: 3;
+  }
+  
+  .podium-2 {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: end;
+    z-index: 2;
+  }
+  
+  .podium-3 {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+    align-self: end;
+    z-index: 1;
+  }
+  
+  @media (max-width: 768px) {
+    .podium {
+      display: flex;
+      flex-direction: column;
+    }
+  
+    .podium-1,
+    .podium-2,
+    .podium-3 {
+      transform: none;
+    }
+  }
+  
