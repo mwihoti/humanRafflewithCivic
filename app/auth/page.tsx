@@ -11,12 +11,19 @@ import FloatingElements from "@/components/floating-elements"
 import ConfettiEffect from "@/components/confetti-effect"
 import { toast } from "@/components/ui/use-toast"
 import { useAutoConnect } from "@civic/auth-web3/wagmi";
+import { useAccount } from "wagmi"
 
 export default function AuthPage() {
   const router = useRouter()
   const { user, signIn, isLoading } = useUser()
   const [authStep, setAuthStep] = useState<"initial" | "verifying" | "complete">("initial")
   const [showConfetti, setShowConfetti] = useState(false)
+
+  // initialize civic auto connection
+  useAutoConnect()
+
+  // get wallet account from wagmi
+  const {address, isConnected} = useAccount()
 
   useEffect(() => {
     if ( user) {

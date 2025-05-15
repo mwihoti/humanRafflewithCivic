@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
@@ -16,10 +16,21 @@ import type { Raffle } from "@/lib/types"
 
 export default function ProfilePage() {
   const router = useRouter()
-  const { isLoading, user } = useUser()
+  const { isLoading, user, signOut } = useUser()
   const [activeRaffles, setActiveRaffles] = useState<Raffle[]>([])
   const [enteredRaffles, setEnteredRaffles] = useState<Raffle[]>([])
   const [isLoadingRaffles, setIsLoadingRaffles] = useState(true)
+
+  // Define the handleLogout function
+  const handleLogout = useCallback(async () => {
+    try {
+      await signOut();
+      // Redirect to homepage after logout
+      router.push("/");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }, [signOut, router]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -57,7 +68,7 @@ export default function ProfilePage() {
     )
   }
 
-  if ( !user) {
+  if (!user) {
     return null // Will redirect in useEffect
   }
 
@@ -111,7 +122,7 @@ export default function ProfilePage() {
                     <div>
                       <p className="text-sm text-gray-500 mb-1">Wallet Address</p>
                       <p className="text-xs font-mono bg-purple-50 p-2 rounded-md overflow-hidden text-ellipsis break-all text-purple-700">
-                        {user.walletAddress}
+                        {user.ethereum?.address || "No wallet connected"}
                       </p>
                     </div>
 
@@ -220,7 +231,7 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="relative">
-                              <NFTTicket raffle={raffle} walletAddress={user.walletAddress} />
+                              <NFTTicket raffle={raffle} walletAddress={user.ethereum?.address} />
                             </div>
 
                             <Link href={`/raffles/${raffle.id}`}>

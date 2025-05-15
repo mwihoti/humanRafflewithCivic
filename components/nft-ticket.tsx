@@ -6,7 +6,7 @@ import type { Raffle } from "@/lib/types"
 
 interface NFTTicketProps {
   raffle: Raffle
-  walletAddress: string
+  walletAddress?: string
 }
 
 export default function NFTTicket({ raffle, walletAddress }: NFTTicketProps) {
@@ -70,7 +70,10 @@ export default function NFTTicket({ raffle, walletAddress }: NFTTicketProps) {
       ctx.fillText(`Ends: ${new Date(raffle.endDate).toLocaleDateString()}`, canvas.width / 2, 85)
 
       // Wallet address (shortened)
-      const shortAddress = `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`
+      const shortAddress = walletAddress 
+      ? `${walletAddress.substring(0, 6)}...${walletAddress.substring(walletAddress.length - 4)}`
+      : 'Wallet Not Connected'
+      
       ctx.fillText(shortAddress, canvas.width / 2, 105)
 
       // Ticket number

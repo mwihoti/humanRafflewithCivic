@@ -11,7 +11,7 @@ const raffles: Raffle[] = [
       "Win a limited edition NFT from a renowned digital artist. Only verified humans can participate in this exclusive giveaway.",
     prize: "Limited Edition NFT",
     endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days from now
-    imageUrl: "/placeholder.svg?height=300&width=500",
+    imageUrl: "/raf2.jpeg?height=300&width=500",
     participants: [],
     status: "active",
   },
@@ -21,7 +21,7 @@ const raffles: Raffle[] = [
     description: "Win two VIP tickets to the upcoming blockchain conference in your city. Transportation not included.",
     prize: "2x VIP Conference Tickets",
     endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days from now
-    imageUrl: "/placeholder.svg?height=300&width=500",
+    imageUrl: "/raf1.jpeg?height=300&width=500",
     participants: [],
     status: "active",
   },
@@ -31,7 +31,7 @@ const raffles: Raffle[] = [
     description: "Keep your crypto secure with a brand new hardware wallet. Only one lucky winner will be selected.",
     prize: "Secure Hardware Wallet",
     endDate: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days from now
-    imageUrl: "/placeholder.svg?height=300&width=500",
+    imageUrl: "/raf3.jpeg?height=300&width=500",
     participants: [],
     status: "active",
   },
@@ -41,7 +41,7 @@ const raffles: Raffle[] = [
     description: "This raffle has already concluded. The winner received 1 ETH directly to their wallet.",
     prize: "1 ETH",
     endDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days ago
-    imageUrl: "/placeholder.svg?height=300&width=500",
+    imageUrl: "/raf4.jpeg?height=300&width=500",
     participants: ["0x123...456", "0x789...012", "0xabc...def"],
     status: "completed",
     winner: "0x789...012",

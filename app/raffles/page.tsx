@@ -81,6 +81,7 @@ export default function RafflesPage() {
             </Card>
           </motion.div>
         ) : (
+    
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
             <Tabs defaultValue="active" className="w-full">
               <TabsList className="w-full max-w-md mx-auto bg-white/20 backdrop-blur-sm">
@@ -97,6 +98,9 @@ export default function RafflesPage() {
                   Past Raffles
                 </TabsTrigger>
               </TabsList>
+              <div className="pt-5">
+            <h3 className="text-xl text-white/90"> Hello {user?.name || 'Guest'}</h3>
+</div>
 
               <TabsContent value="active" className="mt-6">
                 {isLoading ? (

@@ -7,39 +7,79 @@ import { motion } from "framer-motion"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Clock, Users, Gift, Trophy, Share2, Ticket } from "lucide-react"
+import { Clock, Users, Gift, Trophy, Share2, Ticket, Wallet, Check } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { useUser } from "@civic/auth-web3/react"
 import FloatingElements from "@/components/floating-elements"
 import ConfettiEffect from "@/components/confetti-effect"
 import CountdownTimer from "@/components/countdown-timer"
 import NFTTicket from "@/components/nft-ticket"
-import { getRaffleById, enterRaffle, checkIfEntered } from "@/lib/raffle-service"
+import { getRaffleById, enterRaffle, checkIfEntered, getTreasuryAddress } from "@/lib/raffle-service"
 import type { Raffle } from "@/lib/types"
-
+import { useAutoConnect } from "@civic/auth-web3/wagmi"
+import { useAccount, useBalance, useSendTransaction, useWaitForTransactionReceipt } from 'wagmi'
+import { parseEther } from 'viem'
+import { use } from "react"
+import { userHasWallet } from "@civic/auth-web3"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 
 export default function RafflePage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const { toast } = useToast()
-  const {  user } = useUser()
+  const userContext = useUser()
   const [raffle, setRaffle] = useState<Raffle | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [hasEntered, setHasEntered] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [paymentAmount, setPaymentAmount] = useState<string>("0.01")
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false)
+
+  const unwrappedParams = use(params)
+  const id = unwrappedParams.id 
+
+  useAutoConnect();
+
+  // Get wallet account from wagmi
+  const { address, isConnected } = useAccount()
+  const balance = useBalance({ address })
+  
+  // Configure transaction
+  const treasuryAddress = typeof window !== 'undefined' 
+    ? process.env.NEXT_PUBLIC_RAFFLE_TREASURY_ADDRESS || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' 
+    : '0xD6B36798474ef5A90AaDb0A042CB7f7f1c25363A'
+  
+
+  const { data: txHash, error: txError, isPending: isSendingTx, sendTransaction } = useSendTransaction()
+
+    // Wait for transaction confirmation
+    const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
+      hash: txHash,
+    })
+
+  
+  
 
   useEffect(() => {
     const fetchRaffle = async () => {
       try {
-        const data = await getRaffleById(params.id)
+        const data = await getRaffleById(id)
         setRaffle(data)
 
-        if ( user?.walletAddress && data) {
-          const entered = await checkIfEntered(data.id, user.walletAddress)
+        if (address && data) {
+          const entered = await checkIfEntered(data.id, address)
           setHasEntered(entered)
         }
       } catch (error) {
         console.error("Error fetching raffle:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load raffle information",
+          variant: "destructive",
+        })
         router.push("/raffles")
       } finally {
         setIsLoading(false)
@@ -47,59 +87,153 @@ export default function RafflePage({ params }: { params: { id: string } }) {
     }
 
     fetchRaffle()
-  }, [params.id, router, user])
+  }, [id, router, address, toast])
 
-  const handleEnterRaffle = async () => {
-    if (  !user?.walletAddress || !raffle) return
+  //Update when wallet connect
+  useEffect(() => {
+    if (isConnected && address && raffle) {
+      const checkEntry = async () => {
+        const entered = await checkIfEntered(raffle.id, address)
+        setHasEntered(entered)
+      }
+      checkEntry()
+    }
+  }, [isConnected, address, raffle])
 
-    setIsSubmitting(true)
+    // Handle transaction confirmation and complete raffle entry
+    useEffect(() => {
+      if (isConfirmed && txHash && raffle && address) {
+        const completeRaffleEntry = async () => {
+          try {
+            await enterRaffle(raffle.id, address);
+            setHasEntered(true);
+            setShowConfetti(true);
+            setShowPaymentDialog(false);
+            
+            toast({
+              title: "🎉 You're In!",
+              description: "Payment successful! You've entered the raffle. Good luck!",
+            });
+          } catch (error) {
+            console.error("Error entering raffle after payment:", error);
+            toast({
+              title: "Warning",
+              description: "Payment successful, but there was an issue recording your entry. Please contact support.",
+              variant: "destructive",
+            });
+          } finally {
+            setIsSubmitting(false);
+            setIsProcessingPayment(false);
+          }
+        };
+        
+        completeRaffleEntry();
+      }
+    }, [isConfirmed, txHash, raffle, address, toast]);
+  
+    // Handle transaction errors
+    useEffect(() => {
+      if (txError) {
+        console.error("Transaction error:", txError);
+        toast({
+          title: "Transaction Failed",
+          description: "Your payment couldn't be processed. Please try again.",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        setIsProcessingPayment(false);
+      }
+    }, [txError, toast]);
+  
 
+  const afterLogin = async () => {
     try {
-      // In a real implementation, this would call a smart contract method
-      // Example with ethers.js:
-      // const provider = new ethers.providers.Web3Provider(window.ethereum);
-      // const signer = provider.getSigner();
-      // const contract = new ethers.Contract(RAFFLE_CONTRACT_ADDRESS, RAFFLE_ABI, signer);
-      // const tx = await contract.enterRaffle(raffle.id);
-      // await tx.wait();
-
-      // For now, we'll use our mock implementation
-      await enterRaffle(raffle.id, user.walletAddress)
-
-      setHasEntered(true)
-      setShowConfetti(true)
-
-      toast({
-        title: "🎉 You're In!",
-        description: "You've successfully entered the raffle. Good luck!",
-      })
+      // Check if the user has a wallet, and create one if not
+      if (userContext.user && !userHasWallet(userContext)) {
+        await userContext.createWallet();
+      }
+      if (userContext.user) {
+        toast({
+          title: "Success",
+          description: "Wallet created successfully!"
+        });
+        console.log('Wallet created successfully:', userContext.user);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to create wallet",
+          variant: "destructive"
+        });
+        console.log('Failed to create wallet');
+      }
     } catch (error) {
-      console.error("Error entering raffle:", error)
+      console.log('Error in afterLogin:', error);
       toast({
         title: "Error",
-        description: "Failed to enter raffle. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmitting(false)
+        description: `Error creating wallet, ${error}`,
+        variant: "destructive"
+      });
     }
-  }
+  };
 
+  // Only show component if user is logged in
+  if (!userContext.user) return null;
+
+  const handleEnterRaffle = async () => {
+    if (!isConnected || !address || !raffle) return;
+    setShowPaymentDialog(true);
+  };
+
+  const submitPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!isConnected || !address || !raffle) return;
+
+    setIsSubmitting(true);
+    setIsProcessingPayment(true);
+
+    try {
+      const value = paymentAmount ? parseEther(paymentAmount) : undefined;
+
+      // Send ETH transaction
+      sendTransaction({ 
+        to: treasuryAddress,
+        value,
+        account: address
+      });
+      
+      toast({
+        title: "Processing Payment",
+        description: "Please wait while your transaction is being confirmed...",
+      });
+      
+      // The transaction confirmation is handled by the useEffect hook that watches isConfirmed
+    } catch (error) {
+      console.error("Error initiating transaction:", error);
+      toast({
+        title: "Error",
+        description: "Failed to initiate transaction. Please try again.",
+        variant: "destructive",
+      });
+      setIsSubmitting(false);
+      setIsProcessingPayment(false);
+    }
+  };
   const handleShareRaffle = () => {
     if (navigator.share) {
       navigator.share({
         title: raffle?.title || "HumanRaffle",
         text: `Check out this exclusive raffle for verified humans: ${raffle?.title}`,
         url: window.location.href,
-      })
+      });
     } else {
-      navigator.clipboard.writeText(window.location.href)
+      navigator.clipboard.writeText(window.location.href);
       toast({
         title: "Link Copied!",
         description: "Raffle link copied to clipboard",
-      })
+      });
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -107,7 +241,7 @@ export default function RafflePage({ params }: { params: { id: string } }) {
         <FloatingElements />
         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
-    )
+    );
   }
 
   if (!raffle) {
@@ -126,17 +260,67 @@ export default function RafflePage({ params }: { params: { id: string } }) {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
-  const isActive = raffle.status === "active"
-  const isPast = raffle.status === "completed"
-  const hasWinner = !!raffle.winner
+  const isActive = raffle.status === "active";
+  const isPast = raffle.status === "completed";
+  const hasWinner = !!raffle.winner;
 
   return (
     <div className="relative min-h-screen">
       <FloatingElements />
       {showConfetti && <ConfettiEffect />}
+
+      {/* Payment Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Enter Raffle</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={submitPayment}>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="address" className="text-right">
+                  To Address
+                </Label>
+                <Input 
+                  id="address" 
+                  value={treasuryAddress}
+                  disabled
+                  className="col-span-3 mb-2 text-gray-500"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="amount" className="text-right">
+                  Amount (ETH)
+                </Label>
+                <Input 
+                  id="amount" 
+                  value={paymentAmount}
+                  placeholder="Enter amount in ETH" 
+                  className="col-span-3" 
+                  type="number" 
+                  step="0.001" 
+                  min="0.001"
+                  required 
+                  onChange={(e) => setPaymentAmount(e.target.value)} 
+                />
+              </div>
+              <p className="text-xs text-gray-500 col-span-4 pl-4">
+                Minimum entry: 0.001 ETH. Larger contributions increase your chances!
+              </p>
+            </div>
+            <DialogFooter>
+            <Button type="submit" disabled={isSubmitting || isSendingTx || isConfirming}>
+                {isSubmitting ? 
+                  (isConfirming ? 'Confirming...' : isSendingTx ? 'Sending...' : 'Processing...') : 
+                  `Pay ${paymentAmount} ETH`}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       <div className="container max-w-6xl mx-auto py-12 px-4 z-10 relative">
         <motion.div
@@ -177,7 +361,7 @@ export default function RafflePage({ params }: { params: { id: string } }) {
               <Users className="h-4 w-4" />
               {raffle.participants.length} participants
             </span>
-
+            
             <Button
               variant="outline"
               size="sm"
@@ -236,6 +420,23 @@ export default function RafflePage({ params }: { params: { id: string } }) {
                       </div>
                     </div>
                   </div>
+                  
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <h3 className="text-sm font-bold text-blue-600 mb-2">Prize Pool</h3>
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M9 12h6" />
+                        <path d="M12 9v6" />
+                      </svg>
+                      <span className="font-bold text-blue-700">
+                        {raffle.prizePool ? `${raffle.prizePool} ETH` : "Growing!"}
+                      </span>
+                    </div>
+                    <p className="text-xs text-blue-600 mt-2">
+                      The more people enter, the bigger the prize gets!
+                    </p>
+                  </div>
 
                   {hasWinner && (
                     <div className="bg-purple-100 p-4 rounded-lg border border-purple-200">
@@ -260,7 +461,7 @@ export default function RafflePage({ params }: { params: { id: string } }) {
             transition={{ delay: 0.3, duration: 0.5 }}
             className="lg:col-span-2"
           >
-            {!user ? (
+            {!userContext.user ? (
               <Card className="bg-white/90 backdrop-blur-sm border-white/30 shadow-xl h-full">
                 <CardContent className="p-6 flex flex-col items-center justify-center h-full">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-purple-100 mb-4">
@@ -288,6 +489,83 @@ export default function RafflePage({ params }: { params: { id: string } }) {
                     <CountdownTimer endDate={raffle.endDate} />
                   </div>
 
+                  {!userHasWallet(userContext) &&
+                    <div className="p-4 rounded-lg border bg-card shadow-md mb-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <div className="h-6 w-6 rounded-full bg-blue-500/20 flex items-center justify-center mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                          </div>
+                          <span className="text-sm font-medium">Wallet Setup</span>
+                        </div>
+                        
+                        <p className="text-xs text-muted-foreground">Create a blockchain wallet to enable payments and secure your health data.</p>
+                        
+                        <Button 
+                          onClick={afterLogin} 
+                          className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white"
+                          size="sm"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                          Create Wallet
+                        </Button>
+                      </div>
+                    </div>
+                  }
+
+                  {userHasWallet(userContext) && 
+                    <div className="p-4 rounded-lg border bg-card shadow-md mb-6">
+                      <div className="space-y-2">
+                        <div className="flex items-center">
+                          <Wallet className="h-5 w-5 text-primary mr-2" />
+                          <div className="h-6 w-6 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
+                            <Check className="h-3 w-3 text-green-500" />
+                          </div>
+                          <span className="text-sm font-medium">Wallet Connected</span>
+                        </div>
+                        
+                        <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">Wallet Address</p>
+                          <div className="flex items-center gap-2">
+                            <code className="bg-muted px-2 py-1 rounded text-xs font-mono">
+                              {userContext.ethereum.address.substring(0, 6)}...{userContext.ethereum.address.substring(userContext.ethereum.address.length - 4)}
+                            </code>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-6 w-6" 
+                              onClick={() => {
+                                navigator.clipboard.writeText(userContext.ethereum.address);
+                                toast({
+                                  title: "Success",
+                                  description: "Address copied to clipboard"
+                                });
+                              }}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="text-xs text-muted-foreground">Balance</p>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">
+                              {balance?.data
+                                ? `${(BigInt(balance.data.value) / BigInt(1e18)).toString()} ${balance.data.symbol}`
+                                : "Loading..."}
+                            </span>
+                            {(balance?.data && BigInt(balance.data.value) === BigInt(0)) && (
+                              <span className="text-xs text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                                Low balance
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  }
+
                   {hasEntered ? (
                     <div className="space-y-6">
                       <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -301,7 +579,7 @@ export default function RafflePage({ params }: { params: { id: string } }) {
                       </div>
 
                       <div className="relative">
-                        <NFTTicket raffle={raffle} walletAddress={user?.walletAddress || ""} />
+                        <NFTTicket raffle={raffle} walletAddress={userContext.ethereum?.address || ""} />
                       </div>
 
                       <Button
@@ -315,30 +593,24 @@ export default function RafflePage({ params }: { params: { id: string } }) {
                     </div>
                   ) : (
                     <div className="space-y-6">
-                      <div className="rounded-md bg-purple-50 p-4">
-                        <p className="text-sm font-medium text-purple-600 mb-2">Your Wallet Address</p>
-                        <p className="text-xs font-mono break-all text-purple-700">
-                          {user?.walletAddress || "No wallet connected"}
-                        </p>
-                      </div>
-
                       <Button
                         onClick={handleEnterRaffle}
-                        disabled={isSubmitting || !user?.walletAddress}
+                        disabled={isSubmitting || !address }
                         className="w-full py-6 text-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
                       >
                         {isSubmitting ? (
                           <>
                             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            Processing...
+                            {isProcessingPayment ? "Processing Payment..." : "Processing..."}
                           </>
                         ) : (
-                          "Enter Raffle"
+                          `Enter Raffle (${paymentAmount} ETH)`
                         )}
                       </Button>
 
                       <p className="text-xs text-center text-gray-500">
-                        By entering, you confirm you are a real person and agree to the raffle terms.
+                        By entering, you confirm you are a real person and agree to the raffle terms. 
+                        Your ETH contribution goes toward the prize pool.
                       </p>
                     </div>
                   )}
@@ -423,5 +695,5 @@ export default function RafflePage({ params }: { params: { id: string } }) {
         </div>
       </div>
     </div>
-  )
+  );
 }

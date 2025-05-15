@@ -23,7 +23,7 @@ if (isProtectedRoute) {
       // If the middleware returns a response (redirect to auth), use it
       if (authResponse) {
         // Create a custom response that redirects to our auth page
-        const url = new URL('/auth', request.url);
+        const url = new URL('/raffles', request.url);
         return NextResponse.redirect(url);
       }
       
