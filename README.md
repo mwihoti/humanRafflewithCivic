@@ -6,7 +6,7 @@ HumanRaffle is a decentralized raffle platform that uses Civic Auth to verify hu
 
 ### Video Demo
 
-<video src="/public/video-demo.mp4" width="320" height="240" control> Watch</video>
+<video src="/public/video-demo.mp4" width="320" height="240" controls> Watch</video>
 
 ## 🚀 Features
 
