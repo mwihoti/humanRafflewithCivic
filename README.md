@@ -128,7 +128,7 @@ HumanRaffle uses Civic Auth for:
 The integration is handled through:
 - `useUser` hook from `@civic/auth-web3/react`
 - `userHasWallet` utility from `@civic/auth-web3`
-- Automatic wallet creation during authentication
+- `useAutoConnect` Automatic wallet creation during authentication `@civic/auth-web3/wagmi`
 
 
 ## 🤝 Contributing
