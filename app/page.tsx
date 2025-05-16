@@ -178,8 +178,8 @@ export default function Home() {
           className="text-center"
         >
           <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-md mb-2">HumanRaffle</h1>
-          <p className="text-xl md:text-2xl text-white/90 font-medium">Fun raffles for real humans, not bots!</p>
-          <WalletDetails />
+          <p className="text-xl md:text-2xl py-8 text-white/90 font-medium">Fun raffles for real humans, not bots!</p>
+          <WalletDetails  />
 
         </motion.div>
   <p className="text-xl text-white/80 max-w-md mx-auto">
