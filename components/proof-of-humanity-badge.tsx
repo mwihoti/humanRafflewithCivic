@@ -21,7 +21,7 @@ export default function ProofOfHumanityBadge({
   const userContext = useUser()
   const hasWallet = userHasWallet(userContext)
 
-  // Format the verification date
+
   const formattedDate = new Date(verificationDate).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -29,8 +29,7 @@ export default function ProofOfHumanityBadge({
   })
 
   const handleDownload = () => {
-    // In a real implementation, you would generate an image
-    // For now, we'll just show a toast
+   
     toast({
       title: "Badge Downloaded",
       description: "Your Proof of Humanity badge has been downloaded.",

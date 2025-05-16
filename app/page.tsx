@@ -7,8 +7,7 @@ import { Button } from "@/components/ui/button"
 import { useUser } from "@civic/auth-web3/react"
 import { userHasWallet } from "@civic/auth-web3"
 import { Clock, Users, Gift, Trophy, Share2, Ticket, Wallet, Check } from "lucide-react"
-import { toast } from "@/components/ui/use-toast" // Make sure to import toast
-
+import { toast } from "@/components/ui/use-toast" 
 import RaffleDrum from "@/components/raffle-drum"
 import FloatingElements from "@/components/floating-elements"
 import { Shield } from "lucide-react"
@@ -34,8 +33,7 @@ export default function Home() {
     const fetchBalance = async () => {
       if (userHasWallet(userContext)) {
         try {
-          // You'll need to implement this function based on your web3 provider
-          // This is a placeholder - you should use the appropriate method for your setup
+          
           const ethBalance = await window.ethereum.request({
             method: 'eth_getBalance',
             params: [userContext.ethereum.address, 'latest']
@@ -170,7 +168,7 @@ export default function Home() {
    </div>
       
       <div className="container max-w-5xl mx-auto flex flex-col items-center justify-center gap-8 z-10">
-        {/* Rest of your component remains the same */}
+        
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}

@@ -2,7 +2,7 @@ import { http, createConfig, WagmiProvider } from 'wagmi'
 import { mainnet, sepolia } from 'wagmi/chains'
 import { coinbaseWallet, injected, walletConnect } from 'wagmi/connectors'
 import { embeddedWallet } from "@civic/auth-web3/wagmi";
-import { publicProvider } from 'wagmi/providers/public'
+
 
 
 // Get the environment variable using process.env instead of import.meta.env
@@ -26,12 +26,7 @@ export const config = createConfig({
     }
 })
 
-// You can remove this interface as it's not needed with process.env
-// interface ImportMeta {
-//    env: {
-//        NEXT_PUBLIC_CIVIC_CLIENT_ID: string;
-//    };
-// }
+
 
 declare module 'wagmi' {
     interface Register {

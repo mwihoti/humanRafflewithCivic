@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Trophy, Star, Calendar, Activity } from "lucide-react"
 import { useUser } from "@civic/auth-web3/react"
 
-// Mock reputation data - in a real app, this would come from your backend
+
 const mockReputationData = {
   score: 85,
   level: 3,
@@ -26,20 +26,15 @@ export default function HumanReputation() {
   const userContext = useUser()
   const [reputationData, setReputationData] = useState(mockReputationData)
 
-  // In a real app, you would fetch the user's reputation data from your backend
+  
   useEffect(() => {
     // Simulate API call
     const fetchReputationData = async () => {
       if (userContext.ethereum?.address) {
-        // In a real app, you would fetch data from your API
-        // const response = await fetch(`/api/reputation/${userContext.ethereum.address}`)
-        // const data = await response.json()
-        // setReputationData(data)
-
-        // For demo purposes, we'll use mock data
+ 
         setReputationData({
           ...mockReputationData,
-          // Add some randomness for demo purposes
+          
           score: 70 + Math.floor(Math.random() * 30),
           rafflesEntered: 5 + Math.floor(Math.random() * 15),
         })

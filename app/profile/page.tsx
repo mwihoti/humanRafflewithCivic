@@ -16,8 +16,6 @@ import NFTTicket from "@/components/nft-ticket"
 import { getRaffles } from "@/lib/raffle-service"
 import type { Raffle } from "@/lib/types"
 import ProofOfHumanityBadge from "@/components/proof-of-humanity-badge"
-import HumanReputation from "@/components/human-reputation"
-import TransactionDemo from "@/components/transaction-demo"
 import EmbeddedWalletGuide from "@/components/embedded-wallet-guide"
 
 export default function ProfilePage() {
@@ -82,8 +80,7 @@ export default function ProfilePage() {
     const fetchBalance = async () => {
       if (userHasWallet(userContext)) {
         try {
-          // You'll need to implement this function based on your web3 provider
-          // This is a placeholder - you should use the appropriate method for your setup
+          
           const ethBalance = await window.ethereum.request({
             method: "eth_getBalance",
             params: [userContext.ethereum.address, "latest"],
