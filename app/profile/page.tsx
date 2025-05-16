@@ -8,18 +8,23 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Shield, Ticket, Clock, User, Wallet, Check } from "lucide-react"
-import { useUser } from "@civic/auth-web3/react"
+import { useUser, useAuth } from "@civic/auth-web3/react"
 import { userHasWallet } from "@civic/auth-web3"
 import { toast } from "@/components/ui/use-toast"
 import FloatingElements from "@/components/floating-elements"
 import NFTTicket from "@/components/nft-ticket"
 import { getRaffles } from "@/lib/raffle-service"
 import type { Raffle } from "@/lib/types"
+import ProofOfHumanityBadge from "@/components/proof-of-humanity-badge"
+import HumanReputation from "@/components/human-reputation"
+import TransactionDemo from "@/components/transaction-demo"
+import EmbeddedWalletGuide from "@/components/embedded-wallet-guide"
 
 export default function ProfilePage() {
   const router = useRouter()
   const userContext = useUser()
-  const { isLoading, user, signOut } = userContext
+  //const { signOut, createEmbeddedWallet } = useAuth()
+  const { isLoading, user } = userContext
   const [activeRaffles, setActiveRaffles] = useState<Raffle[]>([])
   const [enteredRaffles, setEnteredRaffles] = useState<Raffle[]>([])
   const [isLoadingRaffles, setIsLoadingRaffles] = useState(true)
@@ -30,17 +35,41 @@ export default function ProfilePage() {
       formatted: string
     }
   } | null>(null)
+  const [isCreatingWallet, setIsCreatingWallet] = useState(false)
 
   // Define the handleLogout function
   const handleLogout = useCallback(async () => {
     try {
-      await signOut()
+      
       // Redirect to homepage after logout
       router.push("/")
     } catch (error) {
       console.error("Error signing out:", error)
     }
-  }, [signOut, router])
+  }, [ router])
+
+  // Handle creating an embedded wallet
+  const handleCreateEmbeddedWallet = async () => {
+    setIsCreatingWallet(true)
+    try {
+      await createEmbeddedWallet()
+      toast({
+        title: "Wallet Created Successfully!",
+        description: "Your embedded wallet has been created and is ready to use.",
+      })
+      // Refresh the page to update wallet status
+      window.location.reload()
+    } catch (error) {
+      console.error("Error creating embedded wallet:", error)
+      toast({
+        title: "Wallet Creation Failed",
+        description: "There was an error creating your embedded wallet. Please try again.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsCreatingWallet(false)
+    }
+  }
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -105,10 +134,27 @@ export default function ProfilePage() {
       return (
         <div className="bg-purple-50 p-4 rounded-md">
           <p className="text-sm text-gray-500 mb-1">Wallet Status</p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-4">
             <Wallet className="h-4 w-4 text-purple-500" />
             <p className="text-sm font-medium text-purple-700">No Wallet Connected</p>
           </div>
+          <Button
+            onClick={handleCreateEmbeddedWallet}
+            disabled={isCreatingWallet}
+            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+          >
+            {isCreatingWallet ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                Creating Wallet...
+              </>
+            ) : (
+              <>
+                <Wallet className="h-4 w-4 mr-2" />
+                Create Embedded Wallet
+              </>
+            )}
+          </Button>
         </div>
       )
     }
@@ -121,7 +167,7 @@ export default function ProfilePage() {
             <div className="h-5 w-5 rounded-full bg-green-500/20 flex items-center justify-center mr-2">
               <Check className="h-3 w-3 text-green-500" />
             </div>
-            <span className="text-sm font-medium text-purple-700">Wallet Connected</span>
+            <span className="text-sm font-medium text-purple-700">Embedded Wallet Connected</span>
           </div>
 
           <div className="space-y-1">
@@ -215,15 +261,13 @@ export default function ProfilePage() {
                   Browse Raffles
                 </Button>
               </Link>
-              <Link href="/">
               <Button
                 variant="outline"
                 className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
-             
+                onClick={handleLogout}
               >
-                 Home
+                Back Home
               </Button>
-              </Link>
             </div>
           </div>
 
@@ -238,19 +282,7 @@ export default function ProfilePage() {
                   <h2 className="text-2xl font-bold text-purple-600 mb-4">Verified Human</h2>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-4">
-                      <div>
-                        <p className="text-sm text-gray-500 mb-1">Verification Status</p>
-                        <div className="flex items-center gap-2 bg-purple-50 p-2 rounded-md">
-                          <Shield className="h-4 w-4 text-purple-500" />
-                          <p className="text-sm font-medium text-purple-700">
-                            {user.isVerified ? "Verified ✓" : "Pending Verification"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Add any additional user info here */}
-                    </div>
+                    
 
                     <div>
                       {/* Wallet details section */}
@@ -263,7 +295,30 @@ export default function ProfilePage() {
           </Card>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2, duration: 0.5 }}>
+        <div className="grid gap-8 mx-auto col-span-4 col-start-2 md:grid-cols-2 mb-8">
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            <ProofOfHumanityBadge />
+          </motion.div>
+
+         
+        </div>
+
+      
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
+          className="mb-8"
+        >
+          <EmbeddedWalletGuide />
+        </motion.div>
+
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6, duration: 0.5 }}>
           <Tabs defaultValue="entered" className="w-full">
             <TabsList className="w-full max-w-md mx-auto bg-white/20 backdrop-blur-sm">
               <TabsTrigger

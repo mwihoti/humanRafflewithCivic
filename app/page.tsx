@@ -148,8 +148,8 @@ export default function Home() {
   return (
     <main className="relative min-h-screen flex flex-col items-center justify-center p-4 overflow-hidden">
       <FloatingElements />
-
-      <div className="absolute flex gap-4 justify-items-center top-4 right-4 z-10">
+<div className="flex justify-items-center ">
+      <div className="absolute flex text-center    gap-4 justify-items-center top-4 right-14 z-10">
         <Link href="/profile">
           <Button
             variant="outline"
@@ -160,14 +160,14 @@ export default function Home() {
         </Link>
         
         <UserButton 
-          className="bg-white/55 border-white/30 text-white hover:bg-white/30"
+          className="bg-white/55 py-8  border-white/30 text-white hover:bg-white/30"
         />
+
+
       </div>
+     
       
-      {/* Wallet details panel - now conditionally rendered */}
-      <div className="absolute top-20 right-4 z-10 w-64">
-        <WalletDetails />
-      </div>
+   </div>
       
       <div className="container max-w-5xl mx-auto flex flex-col items-center justify-center gap-8 z-10">
         {/* Rest of your component remains the same */}
@@ -179,7 +179,7 @@ export default function Home() {
         >
           <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-md mb-2">HumanRaffle</h1>
           <p className="text-xl md:text-2xl text-white/90 font-medium">Fun raffles for real humans, not bots!</p>
-
+          <WalletDetails />
 
         </motion.div>
   <p className="text-xl text-white/80 max-w-md mx-auto">
@@ -199,7 +199,7 @@ export default function Home() {
         >
           <h2 className="text-2xl md:text-4xl font-bold text-white drop-shadow-md mb-6">Only Humans May Win 🧍‍♂️🎟️</h2>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 py-8 justify-center">
             <Link href="/raffles">
               <Button size="lg" className="text-lg px-8 py-6 bg-white text-purple-600 hover:bg-white/90 shadow-lg">
                 Browse Raffles
@@ -234,9 +234,10 @@ export default function Home() {
         </motion.div>
       </div>
 
-      <footer className="absolute bottom-4 w-full text-center text-white/60 text-sm">
+      <footer className="absolute mx-0  bottom-0 w-full text-center text-white/60 text-sm">
         © {new Date().getFullYear()} HumanRaffle • Powered by Civic Auth
       </footer>
+    
     </main>
   )
 }
