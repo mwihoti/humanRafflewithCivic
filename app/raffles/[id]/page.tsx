@@ -49,8 +49,7 @@ export default function RafflePage({ params }: { params: { id: string } }) {
   
   // Configure transaction
   const treasuryAddress = typeof window !== 'undefined' 
-    ? process.env.NEXT_PUBLIC_RAFFLE_TREASURY_ADDRESS || '0x70997970C51812dc3A010C7d01b50e0d17dc79C8' 
-    : '0xD6B36798474ef5A90AaDb0A042CB7f7f1c25363A'
+    ? process.env.NEXT_PUBLIC_RAFFLE_TREASURY_ADDRESS || '0xD6B36798474ef5A90AaDb0A042CB7f7f1c25363A' : ''
   
 
   const { data: txHash, error: txError, isPending: isSendingTx, sendTransaction } = useSendTransaction()
