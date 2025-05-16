@@ -4,6 +4,10 @@
 
 HumanRaffle is a decentralized raffle platform that uses Civic Auth to verify human participants, ensuring fair and bot-free raffles. The platform allows users to browse, enter, and win raffles with transparent drawing mechanisms and on-chain payments.
 
+### Video Demo
+
+<video src="/public/video-demo.mp4" width="320" height="240" control> Watch</video>
+
 ## 🚀 Features
 
 - **Civic Auth Integration**: Verify users are real humans before entering raffles
